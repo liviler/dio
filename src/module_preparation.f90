@@ -78,7 +78,7 @@ subroutine set_gauss_parameters(ifPrint)
     if(ifPrint) call printGaussParameters
     contains
     subroutine printGaussParameters
-        character(len=*), parameter :: format1= "(a30,35f15.10)"
+        character(len=*), parameter :: format1= "(a30,15f9.5,/,30x,15f9.5,/,30x,5f9.5)"
         open(u_config, file=outputfile%config, status='unknown', position='append')
         write(u_config,*) '*************************BEGIN set_gauss_parameters********************'
         write(u_config,*) 'Gauss-Hermite:  b_z = ',HO%b0*HO%bz
