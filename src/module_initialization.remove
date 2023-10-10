@@ -1,0 +1,156 @@
+!==============================================================================!
+! MODULE Initialization                                                        !
+!                                                                              !
+! This module contains the variables and routines related to the reading of    !
+! the input parameters and files.                                              !
+!                                                                              !
+! List of routines and functions:                                              !
+! - subroutine read_file_b23                                                   !
+! - subroutine read_file_dio                                                   !
+! - subroutine set_output_filename                                             !
+!==============================================================================!
+MODULE Initialization 
+
+use Constants, only: r64,i16,u_start,i64,&
+                     pi 
+use Globals ,only:  constraint, basis_harosc, woodssaxon, &
+                    iteration, inin, nucleus_attributes, pairing, force, outputfile, &
+                    inin
+implicit none
+
+integer, private :: u_b23 = u_start + 1  ! the unit of b23.dat
+integer, private :: u_dio = u_start + 2  ! the unit of dio.dat
+
+contains
+!==============================================================================!
+!                                                                             !
+
+subroutine read_file_b23
+    character(len=10) :: file_path_b23 = 'b23.dat' ! the path of b23.dat
+    integer(i64) :: fileb23_lines_max = 100   ! maximum number of lines in file b23.dat
+
+    integer :: length_count = 0 ! count the exact number of data rows in the 'b23.dat' file
+    integer :: iostat ! store the io status of the 'read' function 
+    integer :: index
+
+    allocate(constraint%betac(fileb23_lines_max))
+    allocate(constraint%bet3c(fileb23_lines_max))
+    allocate(constraint%clam2(fileb23_lines_max))
+
+    open(u_b23, file=file_path_b23, status='old')
+    do index = 1, fileb23_lines_max+1
+        if(length_count >= fileb23_lines_max) then
+            write(*,*) "[Initialization]: 'fileb23_lines_max' too small"
+            stop
+        end if 
+        read(u_b23,*,iostat=iostat) constraint%betac(index),constraint%bet3c(index),constraint%clam2(index)
+        if (iostat /= 0) then
+            if (iostat < 0) then
+                ! read the end
+                exit
+            else
+                ! error
+                write(*, *) "Error reading from b23.dat!","iostat:",iostat
+                stop
+            end if
+        end if
+        length_count = length_count + 1
+    end do
+    constraint%length = length_count
+    close(u_b23)
+end subroutine read_file_b23
+
+subroutine read_file_dio
+    character(len=10) :: file_path_dio = 'dio.dat'
+
+    character :: first_character
+    real(r64) :: tmp
+    character(len=*), parameter ::  format1= "(10x, i5)", &
+                                    format2= "(10x, 2i3)", &
+                                    format3= "(10x, f10.6)", &
+                                    format4= "(10x, 2f10.6)", &
+                                    format5= "(12x, a10)", &
+                                    format6= "(a1, 9x, 2f10.3)", &
+                                    format7= "(a2, i4)"!, &
+                                    ! format9 = "(a, 2f10.6)", &
+                                    ! format10 = "(a, f8.5, a, f8.5)", &
+                                    ! format11 = "(a, i6)"
+    open(u_dio, file=file_path_dio, status='old')
+    read(u_dio, format2) basis_harosc%NF, basis_harosc%NB
+    read(u_dio, format3) basis_harosc%b0
+    read(u_dio, format6) first_character, tmp
+    if(first_character == 'q') then
+        basis_harosc%q = tmp
+        basis_harosc%beta0 = dlog(basis_harosc%q)/(3*sqrt(5/(16*pi)))
+    else
+        basis_harosc%beta0 = tmp
+        basis_harosc%q = exp(basis_harosc%beta0 * 3*sqrt(5/(16*pi)))
+    endif
+    read(u_dio, format6) first_character, tmp
+    if(first_character == 'q') then
+        woodssaxon%qs = tmp
+        woodssaxon%beta2 = dlog(woodssaxon%qs)/(3*sqrt(5/(16*pi)))
+    else
+        woodssaxon%beta2 = tmp
+        woodssaxon%qs = exp(woodssaxon%beta2 * 3*sqrt(5/(16*pi)))
+    endif
+    read(u_dio, format3) woodssaxon%beta3
+    read(u_dio, format1) iteration%iteration_max
+    read(u_dio, format3) iteration%xmix
+    read(u_dio, format1) inin
+    read(u_dio, format7) nucleus_attributes%name, nucleus_attributes%mass_number
+    read(u_dio, format2) pairing%ide
+    read(u_dio, format4) pairing%dec
+    read(u_dio, format4) pairing%ga
+    read(u_dio, format4) pairing%del
+    read(u_dio, format5) force%parname
+    read(u_dio, format4) pairing%vpair
+    read(u_dio, format1) constraint%icstr
+    read(u_dio, format3) constraint%cspr
+    read(u_dio, format3) constraint%cmax
+    close(u_dio)
+end subroutine read_file_dio
+
+subroutine set_output_filename(constraint_beta2,constraint_beta3)
+    real(r64) :: constraint_beta2,constraint_beta3
+    character :: sign_beta2, sign_beta3
+    real(r64) :: abs2c, abs3c
+    integer(i16), dimension(6) :: name
+    integer(i16) :: name_nf1,name_nf2
+    if (constraint_beta2 >= 0.d0) then
+        sign_beta2 = '+'
+    else
+        sign_beta2 = '-'
+    end if
+    if (constraint_beta3 >= 0.d0) then
+        sign_beta3 = '+'
+    else
+        sign_beta3 = '-'
+    end if
+    abs2c = abs(constraint_beta2)
+    abs3c = abs(constraint_beta3)
+    name(1) = abs2c + 48 !In ASCII, character '0' start from 48. 
+    name(2) = mod(abs2c*10,10.d0)+48
+    name(3) = mod(abs2c*100,10.d0)+48
+    name(4) = abs3c+48
+    name(5) = mod(abs3c*10,10.d0)+48
+    name(6) = mod(abs3c*100,10.d0)+48
+    name_nf1 = mod(basis_harosc%NF/10,10) + 48
+    name_nf2 = mod(basis_harosc%NF,10) + 48
+    ! the structure of ouput filenames are `dio_eMax`//basis_harosc%NF//constraint_beta2*100//constraint_beta3*100//type
+    ! like 'dio_eMax08+140+080.out' means basis_harosc%NF=08, constraint_beta2= +1.40, constraint_beta3= +0.80, type is '.out'
+    outputfile%outputf='dio'//'_eMax'//char(name_nf1)//char(name_nf2) &
+                        //sign_beta2//char(name(1))//char(name(2))//char(name(3)) &
+                        //sign_beta3//char(name(4))//char(name(5))//char(name(6))//'.out'
+    outputfile%outputw='dio'//'_eMax'//char(name_nf1)//char(name_nf2) &
+                        //sign_beta2//char(name(1))//char(name(2))//char(name(3)) &
+                        //sign_beta3//char(name(4))//char(name(5))//char(name(6))//'.wel'
+     outputfile%outdel='dio'//'_eMax'//char(name_nf1)//char(name_nf2) &
+                        //sign_beta2//char(name(1))//char(name(2))//char(name(3)) &
+                        //sign_beta3//char(name(4))//char(name(5))//char(name(6))//'.del'
+     outputfile%outputwf='dio'//'_eMax'//char(name_nf1)//char(name_nf2) &
+                        //sign_beta2//char(name(1))//char(name(2))//char(name(3)) &
+                        //sign_beta3//char(name(4))//char(name(5))//char(name(6))//'.wf'
+end subroutine set_output_filename
+
+END MODULE Initialization
