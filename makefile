@@ -14,7 +14,7 @@ SOURCES = 	./src/dio.f90\
 		./src/module_mathmethods.f90\
 		./src/module_nucleus.f90\
 		./src/module_preparation.f90\
-		./src/module_wavefunction.f90\
+		./src/module_wavefunctions.f90\
 		./src/module_field.f90\
 		./src/module_matrix.f90\
 
@@ -31,7 +31,7 @@ gfortran: printConfiguration ${EXE_NAME} printEndInformation
 
 # compiled by ifort
 ifort: FC = ifort
-ifort: FFLAGS = -O2 -module:${MOD_DIR}
+ifort: FFLAGS = -O2 -module ${MOD_DIR}
 ifort: printConfiguration ${EXE_NAME} printEndInformation
 
 printConfiguration:
@@ -86,7 +86,7 @@ ${OBJ_DIR}/module_preparation.o: ${OBJ_DIR}/module_constants.o ${OBJ_DIR}/module
 								 ${OBJ_DIR}/module_basis.o ${OBJ_DIR}/module_mathmethods.o \
 								 ${OBJ_DIR}/module_nucleus.o
 
-${OBJ_DIR}/module_wavefunction.o: ${OBJ_DIR}/module_constants.o ${OBJ_DIR}/module_globals.o
+${OBJ_DIR}/module_wavefunctions.o: ${OBJ_DIR}/module_constants.o ${OBJ_DIR}/module_globals.o
 
 ${OBJ_DIR}/module_field.o: ${OBJ_DIR}/module_constants.o ${OBJ_DIR}/module_globals.o \
 						   ${OBJ_DIR}/module_inout.o

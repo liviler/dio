@@ -11,7 +11,7 @@ PROGRAM DIO
 use Globals
 use Inout, only: set_output_filename
 use Preparation, only: do_preparation
-use Wavefunction, only: choose_basis_wavefuction
+use Wavefunctions, only: choose_basis_wavefuction
 use Field, only: generate_initial_fields
 use Matrix, only: calculate_sigma_nabla,calculate_meson_propagators
 implicit none

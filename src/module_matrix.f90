@@ -245,12 +245,11 @@ subroutine calculate_meson_propagators(ifPrint)
     contains
 
     subroutine printMesonPropagator
-        character(len=8) :: t(no)
-        t(1:no) = ''
+        integer :: i
         open(u_config,file=outputfile%config,status='unknown',position='append')
         write(u_config,*) '*************************BEGIN calculate_meson_propagators ********************'
         do imes =1,4
-            call aprint(u_config,1,1,1,no,no,no,gg(1,imes),t,t,'Meson-Propagator')
+            call aprint(u_config,1,1,1,no,no,no,gg(1,imes),(/('',i=1,no)/),(/('',i=1,no)/),'Meson-Propagator')
         enddo
         write(u_config,"(a,/)") '*************************BEGIN calculate_meson_propagators ********************'
         close(u_config)
